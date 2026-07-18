@@ -14,7 +14,6 @@ if os.path.exists(DATA_PATH):
 else:
     raise FileNotFoundError(f"Could not find {DATA_PATH}.")
 
-# The approximate date the price increase went into effect (January 15, 2021)
 PRICE_INCREASE_DATE = "2021-01-15"
 
 app.layout = html.Div(
@@ -25,7 +24,7 @@ app.layout = html.Div(
         "minHeight": "100vh"
     },
     children=[
-        # Banner Header
+        # Header
         html.Div(
             style={
                 "backgroundColor": "#1e3d59",
@@ -36,90 +35,120 @@ app.layout = html.Div(
                 "color": "#ffffff"
             },
             children=[
-                html.H1("Pink Morsel Sales Analysis Dashboard", style={"margin": "0 0 5px 0", "fontSize": "28px"}),
-                html.P("Evaluating the business impact of the 2021 product price restructuring", style={"margin": "0", "opacity": "0.8"})
+                html.H1(
+                    "Pink Morsel Sales Analysis Dashboard",
+                    id="header",
+                    style={
+                        "margin": "0 0 5px 0",
+                        "fontSize": "28px"
+                    }
+                ),
+                html.P(
+                    "Evaluating the business impact of the 2021 product price restructuring",
+                    style={"margin": "0", "opacity": "0.8"}
+                )
             ]
         ),
-        
-        # Control Card
+
+        # Region Picker
         html.Div(
             style={
-                "backgroundColor": "#ffffff", 
-                "padding": "20px", 
+                "backgroundColor": "#ffffff",
+                "padding": "20px",
                 "borderRadius": "8px",
                 "marginBottom": "25px",
                 "boxShadow": "0 2px 8px rgba(0,0,0,0.05)"
             },
             children=[
                 html.Label(
-                    "Select Target Market Region:", 
-                    style={"fontWeight": "600", "display": "block", "marginBottom": "10px", "color": "#1e3d59"}
+                    "Select Target Market Region:",
+                    style={
+                        "fontWeight": "600",
+                        "display": "block",
+                        "marginBottom": "10px",
+                        "color": "#1e3d59"
+                    }
                 ),
                 dcc.RadioItems(
                     id="region-filter",
                     options=[
-                        {"label": " North Region", "value": "north"},
-                        {"label": " East Region", "value": "east"},
-                        {"label": " South Region", "value": "south"},
-                        {"label": " West Region", "value": "west"},
-                        {"label": " View All Combined", "value": "all"}
+                        {"label": "North", "value": "north"},
+                        {"label": "East", "value": "east"},
+                        {"label": "South", "value": "south"},
+                        {"label": "West", "value": "west"},
+                        {"label": "All", "value": "all"},
                     ],
                     value="all",
                     inline=True,
-                    inputStyle={"marginRight": "5px", "marginLeft": "20px"}
                 )
             ]
         ),
-        
-        # Graph Card
+
+        # Graph
         html.Div(
-            style={"backgroundColor": "#ffffff", "padding": "25px", "borderRadius": "8px", "boxShadow": "0 2px 8px rgba(0,0,0,0.05)"},
+            style={
+                "backgroundColor": "#ffffff",
+                "padding": "25px",
+                "borderRadius": "8px",
+                "boxShadow": "0 2px 8px rgba(0,0,0,0.05)"
+            },
             children=[
-                dcc.Graph(id="sales-line-chart")
+                dcc.Graph(id="visualization")
             ]
         )
     ]
 )
 
+
 @app.callback(
-    Output("sales-line-chart", "figure"),
+    Output("visualization", "figure"),
     Input("region-filter", "value")
 )
 def update_graph(selected_region):
+
     if selected_region == "all":
         filtered_df = df
-        # Graph multi-color lines for each region to stay readable
+
         fig = px.line(
-            filtered_df, x="date", y="sales", color="region",
-            title="Pink Morsel Sales Over Time — All Regions Summary",
-            labels={"date": "Timeline", "sales": "Daily Revenue ($)", "region": "Region"}
+            filtered_df,
+            x="date",
+            y="sales",
+            color="region",
+            title="Pink Morsel Sales Over Time",
+            labels={
+                "date": "Date",
+                "sales": "Sales",
+                "region": "Region"
+            }
         )
+
     else:
         filtered_df = df[df["region"] == selected_region]
+
         fig = px.line(
-            filtered_df, x="date", y="sales",
-            title=f"Pink Morsel Sales Over Time — {selected_region.capitalize()} Region Profile",
-            labels={"date": "Timeline", "sales": "Daily Revenue ($)"}
+            filtered_df,
+            x="date",
+            y="sales",
+            title=f"Pink Morsel Sales - {selected_region.capitalize()}",
+            labels={
+                "date": "Date",
+                "sales": "Sales"
+            }
         )
-    
-    # Superimpose a vertical reference line pinpointing the price hike milestone
+
     fig.add_vline(
-        x=PRICE_INCREASE_DATE, 
-        line_width=2.5, 
-        line_dash="dash", 
-        line_color="#e056fd",
-        annotation_text="Price Increased ($1.50 → $2.00) ",
-        annotation_position="top left"
+        x=PRICE_INCREASE_DATE,
+        line_dash="dash",
+        line_color="red",
+        annotation_text="Price Increase"
     )
-    
+
     fig.update_layout(
-        template="plotly_white",
-        title_x=0.01,
-        hovermode="x unified",
-        margin=dict(l=40, r=40, t=60, b=40)
+        template="plotly_white"
     )
-    
+
     return fig
+
 
 if __name__ == "__main__":
     app.run(debug=True)
